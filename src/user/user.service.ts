@@ -7,32 +7,32 @@ import { Role } from './user.types.js';
 
 @Injectable()
 export class UserService {
+  constructor(@InjectModel(User.name) private usermodel: Model<UserDocument>) {}
 
-    constructor(@InjectModel(User.name) private usermodel: Model<UserDocument>,) {
+  //find user by email
+  async findByEmail(email: string) {
+    return await this.usermodel.findOne({ email });
+  }
 
-    }
+  //create a new user
+  async CreateUser(registerUserDto: RegisterUserDTO) {
+    const { fname, lname, password, email } = registerUserDto;
+    const user = new this.usermodel({
+      fname,
+      lname,
+      email,
+      password,
+      role: Role.USER,
+    });
+    await user.save();
 
-    //find user by email
-    async findByEmail(email: string) {
-        return await this.usermodel.findOne({ email })
-    }
+    //convert the mongoose Document to plain javascript object and remove password
+    const {password: _, ...userWithoutPassword} = user.toObject();
 
-    //create a new user
-    async CreateUser(registerUserDto: RegisterUserDTO) {
-        const { fname, lname, password, email } = registerUserDto
-        const user = new this.usermodel({
-            fname,
-            lname,
-            email,
-            password,
-            role: Role.USER
-        })
-        await user.save();
-        return {
-            status: 201,
-            message: "User Created Successfully!",
-            data: user,
-        }
-    }
-
+    return {
+      status: 201,
+      message: 'User Created Successfully!',
+      data: userWithoutPassword,
+    };
+  }
 }
