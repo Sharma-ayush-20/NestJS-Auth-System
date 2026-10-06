@@ -35,4 +35,12 @@ export class UserService {
       data: userWithoutPassword,
     };
   }
+
+  //login service
+  async loginUser(userDoc: UserDocument) {
+    const userObj = userDoc.toObject ? userDoc.toObject() : userDoc;
+    const { password, ...userWithoutPassword } = userObj;
+
+    return userWithoutPassword;
+  }
 }
