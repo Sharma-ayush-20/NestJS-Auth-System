@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { RegisterUserDTO } from '../auth/dto/registerUserDTO.js';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './schemas/user.schema.js';
@@ -27,7 +27,7 @@ export class UserService {
     await user.save();
 
     //convert the mongoose Document to plain javascript object and remove password
-    const {password: _, ...userWithoutPassword} = user.toObject();
+    const { password: _, ...userWithoutPassword } = user.toObject();
 
     return {
       status: 201,
@@ -40,6 +40,18 @@ export class UserService {
   async loginUser(userDoc: UserDocument) {
     const userObj = userDoc.toObject ? userDoc.toObject() : userDoc;
     const { password, ...userWithoutPassword } = userObj;
+
+    return userWithoutPassword;
+  }
+
+  //get the user profile
+  async getUser(userId: string) {
+    const userData = await this.usermodel.findOne({ _id: userId });
+
+    if (!userData) {
+      throw new NotFoundException('User not found');
+    }
+    const { password, ...userWithoutPassword } = userData?.toObject();
 
     return userWithoutPassword;
   }

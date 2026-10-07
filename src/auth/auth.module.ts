@@ -16,6 +16,7 @@ import { ConfigModule } from '@nestjs/config';
     signOptions: {
       expiresIn: '1h',
     }
-  })]
+  })], 
+  exports: [JwtModule]
 })
 export class AuthModule {}
