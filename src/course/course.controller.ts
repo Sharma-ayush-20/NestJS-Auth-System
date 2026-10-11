@@ -3,6 +3,7 @@ import { CourseService } from './course.service.js';
 import { CreateCourseDto } from './dto/create-course.dto.js';
 import { UpdateCourseDto } from './dto/update-course.dto.js';
 import { AuthGuard } from '../auth/guards/auth.guards.js';
+import { ParseObjectIdPipe } from '../common/pipes/parse.object.id.js';
 
 @Controller('course')
 export class CourseController {
@@ -15,13 +16,15 @@ export class CourseController {
   }
 
   @Get()
+  @UseGuards(AuthGuard)
   findAll() {
     return this.courseService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.courseService.findOne(+id);
+  @UseGuards(AuthGuard)
+  findOne(@Param('id', ParseObjectIdPipe) id: string) {
+    return this.courseService.findOne(id);
   }
 
   @Patch(':id')

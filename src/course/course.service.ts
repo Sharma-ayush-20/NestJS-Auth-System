@@ -31,12 +31,20 @@ export class CourseService {
 
   }
 
-  findAll() {
-    return `This action returns all course`;
+  async findAll() {
+    const allCourse = await this.coursemodel.find();
+    return allCourse
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} course`;
+  async findOne(id: string) {
+    const particularCourse = await this.coursemodel.findById(id)
+    if(!particularCourse){
+      return {
+        status: 404,
+        message: "Course not found"
+      }
+    }
+    return particularCourse
   }
 
   update(id: number, updateCourseDto: UpdateCourseDto) {

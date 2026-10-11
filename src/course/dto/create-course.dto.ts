@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { IsEnum, IsNotEmpty, IsNumber, IsString } from "class-validator";
 import { courseLevel } from "../course.type.js";
 
 export class CreateCourseDto {
@@ -11,6 +11,9 @@ export class CreateCourseDto {
     @IsNotEmpty()
     description: string;
 
+    @IsEnum(courseLevel, {
+        message: "level must be either beginner, intermediate and advanced."
+    })
     @IsString()
     @IsNotEmpty()
     level: courseLevel
