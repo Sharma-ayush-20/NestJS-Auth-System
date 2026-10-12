@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateCourseDto } from './dto/create-course.dto.js';
 import { UpdateCourseDto } from './dto/update-course.dto.js';
 import { Course, CourseDocument } from './schemas/course.schema.js';
@@ -11,7 +11,6 @@ export class CourseService {
   constructor(@InjectModel(Course.name) private coursemodel: Model<CourseDocument>  ){}
 
   async create(createCourseDto: CreateCourseDto) {
-    //add a create course logic
     const { name, description, level, price } = createCourseDto
     if(!name || !description ||!level ||!price){
       return {
@@ -47,11 +46,29 @@ export class CourseService {
     return particularCourse
   }
 
-  update(id: number, updateCourseDto: UpdateCourseDto) {
-    return `This action updates a #${id} course`;
+  async update(id: string, updateCourseDto: UpdateCourseDto) {
+    const updatedCourse = await this.coursemodel.findByIdAndUpdate(id, updateCourseDto, {
+      returnDocument: 'after',
+    })
+    if(!updatedCourse){
+      throw new NotFoundException('Course not found');
+    }
+    return {
+      status: 200,
+      message: "Course updated Sucessfully!",
+      data: updatedCourse
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} course`;
+  async remove(id: string) {
+    const deletedCourse = await this.coursemodel.findByIdAndDelete(id, {returnDocument: 'after'})
+    if (!deletedCourse) {
+    throw new NotFoundException('Course not found');
+  }
+    return {
+      status: 200,
+      message: `${deletedCourse?.name} is deleted Successfully!`,
+      data: deletedCourse
+    }
   }
 }

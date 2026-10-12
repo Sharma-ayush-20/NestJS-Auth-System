@@ -28,12 +28,14 @@ export class CourseController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCourseDto: UpdateCourseDto) {
-    return this.courseService.update(+id, updateCourseDto);
+  @UseGuards(AuthGuard)
+  update(@Param('id', ParseObjectIdPipe) id: string, @Body() updateCourseDto: UpdateCourseDto) {
+    return this.courseService.update(id, updateCourseDto);
   }
 
   @Delete(':id')
+  @UseGuards(AuthGuard)
   remove(@Param('id') id: string) {
-    return this.courseService.remove(+id);
+    return this.courseService.remove(id);
   }
 }
