@@ -35,7 +35,7 @@ export class CourseController {
 
   @Delete(':id')
   @UseGuards(AuthGuard)
-  remove(@Param('id') id: string) {
+  remove(@Param('id', ParseObjectIdPipe) id: string) {
     return this.courseService.remove(id);
   }
 }

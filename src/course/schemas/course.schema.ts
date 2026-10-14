@@ -13,7 +13,7 @@ export class Course {
     @Prop({ required: true })
     description: string
 
-    @Prop({ required: true })
+    @Prop({ required: true, enum: courseLevel })
     level: courseLevel
 
     @Prop({ required: true })

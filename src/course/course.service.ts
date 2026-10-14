@@ -12,12 +12,6 @@ export class CourseService {
 
   async create(createCourseDto: CreateCourseDto) {
     const { name, description, level, price } = createCourseDto
-    if(!name || !description ||!level ||!price){
-      return {
-        status: 401,
-        message: "All Fields are Required"
-      }
-    }
 
     const newCourse = new this.coursemodel({name, description, level, price})
     await newCourse.save()
@@ -38,10 +32,7 @@ export class CourseService {
   async findOne(id: string) {
     const particularCourse = await this.coursemodel.findById(id)
     if(!particularCourse){
-      return {
-        status: 404,
-        message: "Course not found"
-      }
+      throw new NotFoundException("Course not found")
     }
     return particularCourse
   }

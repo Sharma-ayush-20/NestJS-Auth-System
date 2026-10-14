@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { UserService } from '../user/user.service.js';
 import { RegisterUserDTO } from './dto/registerUserDTO.js';
 import { loginUserDTO } from './dto/loginUserDTO.js';
@@ -15,21 +15,11 @@ export class AuthService {
 
         const {fname, lname, email, password} = registerUserdto;
 
-        //Check validation
-        if(!fname || !lname || !email || !password){
-            return {
-                status:400,
-                message:"All fields are required"
-            }
-        }
-
         //check if user already exists
         const user = await this.userService.findByEmail(email);
+
         if(user){
-            return {
-                status:400,
-                message:"User already exists. Sign In"
-            }
+            throw new ConflictException('User already exists. Sign In')
         }
 
         //hash the password
@@ -51,31 +41,18 @@ export class AuthService {
         //authenticated part only
         const { email, password } = loginUserdto
 
-        if(!email || !password){
-            return {
-                status: 401,
-                message: "email and password is required."
-            }
-        }
-
         // email existed or not
         const existedEmail  = await this.userService.findByEmail(email)
 
         if(!existedEmail){
-            return {
-                status: 401,
-                message: "Email not existed. please register yourself!"
-            }
+            throw new UnauthorizedException("Invalid email or password")
         }
 
         //password checking
         const isMatchPassword = await bcrypt.compare(password, existedEmail.password)
 
         if(!isMatchPassword){
-            return {
-                status: 401,
-                message: "Password is not validate. please enter a correct password"
-            }
+            throw new UnauthorizedException("Invalid email or password")
         }
 
         //create a jwt token
