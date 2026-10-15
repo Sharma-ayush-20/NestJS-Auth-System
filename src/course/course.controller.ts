@@ -4,13 +4,17 @@ import { CreateCourseDto } from './dto/create-course.dto.js';
 import { UpdateCourseDto } from './dto/update-course.dto.js';
 import { AuthGuard } from '../auth/guards/auth.guards.js';
 import { ParseObjectIdPipe } from '../common/pipes/parse.object.id.js';
+import { RolesGuard } from '../auth/guards/roles.guards.js';
+import { Roles } from '../auth/decorators/roles.decorators.js';
+import { Role } from '../user/user.types.js';
 
 @Controller('course')
 export class CourseController {
   constructor(private readonly courseService: CourseService) {}
 
   @Post()
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.TEACHER, Role.ADMIN)
   create(@Body() createCourseDto: CreateCourseDto) {
     return this.courseService.create(createCourseDto);
   }
@@ -28,13 +32,15 @@ export class CourseController {
   }
 
   @Patch(':id')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.TEACHER, Role.ADMIN)
   update(@Param('id', ParseObjectIdPipe) id: string, @Body() updateCourseDto: UpdateCourseDto) {
     return this.courseService.update(id, updateCourseDto);
   }
 
   @Delete(':id')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   remove(@Param('id', ParseObjectIdPipe) id: string) {
     return this.courseService.remove(id);
   }

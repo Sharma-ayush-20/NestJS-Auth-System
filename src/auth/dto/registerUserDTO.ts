@@ -1,4 +1,5 @@
-import { IsEmail, IsString, IsNotEmpty, IsStrongPassword } from "class-validator"
+import { IsEmail, IsString, IsNotEmpty, IsStrongPassword, IsEnum, IsOptional } from "class-validator"
+import { Role } from "../../user/user.types.js";
 
 export class RegisterUserDTO {
 
@@ -18,4 +19,11 @@ export class RegisterUserDTO {
     @IsNotEmpty()
     @IsStrongPassword()
     password: string;
+
+    @IsOptional()
+    @IsEnum(Role, {
+        message: 'Role must be either student, teacher and admin'
+    })
+    @IsString()
+    role: Role
 }

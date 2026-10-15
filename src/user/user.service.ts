@@ -16,13 +16,13 @@ export class UserService {
 
   //create a new user
   async CreateUser(registerUserDto: RegisterUserDTO) {
-    const { fname, lname, password, email } = registerUserDto;
+    const { fname, lname, password, email, role } = registerUserDto;
     const user = new this.usermodel({
       fname,
       lname,
       email,
       password,
-      role: Role.USER,
+      role: role || Role.STUDENT,
     });
     await user.save();
 

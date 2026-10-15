@@ -11,7 +11,7 @@ export class UserController {
     @Get('profile') //http://localhost:3000/user/profile - Get
     @UseGuards(AuthGuard)
     async getProfile(@Request() request: any){
-        const user = await this.userService.getUser(request.userId)
+        const user = await this.userService.getUser(request.user.sub)
         return user
     }
 }
