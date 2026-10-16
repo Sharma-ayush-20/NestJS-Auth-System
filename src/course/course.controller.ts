@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
 import { CourseService } from './course.service.js';
 import { CreateCourseDto } from './dto/create-course.dto.js';
 import { UpdateCourseDto } from './dto/update-course.dto.js';
@@ -15,8 +15,8 @@ export class CourseController {
   @Post()
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.TEACHER, Role.ADMIN)
-  create(@Body() createCourseDto: CreateCourseDto) {
-    return this.courseService.create(createCourseDto);
+  create(@Request() request: any, @Body() createCourseDto: CreateCourseDto) {
+    return this.courseService.create(createCourseDto, request.user);
   }
 
   @Get()
@@ -34,14 +34,15 @@ export class CourseController {
   @Patch(':id')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.TEACHER, Role.ADMIN)
-  update(@Param('id', ParseObjectIdPipe) id: string, @Body() updateCourseDto: UpdateCourseDto) {
-    return this.courseService.update(id, updateCourseDto);
+  update(@Param('id', ParseObjectIdPipe) id: string, @Body() updateCourseDto: UpdateCourseDto,
+  @Request() request: any) {
+    return this.courseService.update(id, updateCourseDto, request.user);
   }
 
   @Delete(':id')
   @UseGuards(AuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
-  remove(@Param('id', ParseObjectIdPipe) id: string) {
-    return this.courseService.remove(id);
+  @Roles(Role.ADMIN, Role.TEACHER)
+  remove(@Param('id', ParseObjectIdPipe) id: string, @Request() request: any) {
+    return this.courseService.remove(id, request.user);
   }
 }
