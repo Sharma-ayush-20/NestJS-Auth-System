@@ -5,10 +5,11 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Course, CourseSchema } from './schemas/course.schema.js';
 import { JwtModule } from '@nestjs/jwt';
 import { User, UserSchema } from '../user/schemas/user.schema.js';
+import { ModuleSchema } from './schemas/module.schema.js';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{name: Course.name, schema: CourseSchema}, {name: User.name, schema: UserSchema}]),
+    MongooseModule.forFeature([{name: Course.name, schema: CourseSchema}, {name: User.name, schema: UserSchema}, {name: Module.name, schema: ModuleSchema}]),
     JwtModule
   ],
   controllers: [CourseController],

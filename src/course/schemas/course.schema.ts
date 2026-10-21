@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { courseLevel } from "../course.type.js";
 import { HydratedDocument, Types } from "mongoose";
 import { User } from "../../user/schemas/user.schema.js";
+import { Module, ModuleSchema } from "./module.schema.js";
 
 export type CourseDocument = HydratedDocument<Course> 
 
@@ -22,6 +23,9 @@ export class Course {
 
     @Prop({ type: Types.ObjectId, ref: User.name, required: true })
     instructorId: Types.ObjectId
+
+    @Prop({ type: [ModuleSchema], default: [] })
+    modules: Module[]
 
 } 
 

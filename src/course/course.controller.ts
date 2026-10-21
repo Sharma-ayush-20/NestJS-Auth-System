@@ -7,6 +7,8 @@ import { ParseObjectIdPipe } from '../common/pipes/parse.object.id.js';
 import { RolesGuard } from '../auth/guards/roles.guards.js';
 import { Roles } from '../auth/decorators/roles.decorators.js';
 import { Role } from '../user/user.types.js';
+import { CreateModuleDTO } from './dto/create-module.dto.js';
+import { CreateLessonDTO } from './dto/create-lesson.dto.js';
 
 @Controller('course')
 export class CourseController {
@@ -44,5 +46,19 @@ export class CourseController {
   @Roles(Role.ADMIN, Role.TEACHER)
   remove(@Param('id', ParseObjectIdPipe) id: string, @Request() request: any) {
     return this.courseService.remove(id, request.user);
+  }
+
+  @Post(':id/module')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.TEACHER)
+  createmodule(@Param('id', ParseObjectIdPipe) id: string, @Request() request: any, @Body() createModuleDto: CreateModuleDTO) {
+    return this.courseService.createModule(id, request.user, createModuleDto)  
+  }
+
+  @Post(':courseId/module/:moduleId/lesson')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.TEACHER)
+  createlesson(@Param('courseId', ParseObjectIdPipe) courseId: string, @Param('moduleId', ParseObjectIdPipe) moduleId: string, @Request() request: any, @Body() createLessonDto: CreateLessonDTO){
+    return this.courseService.createLesson(courseId, moduleId, request.user, createLessonDto)
   }
 }
