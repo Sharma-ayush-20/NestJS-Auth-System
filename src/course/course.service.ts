@@ -14,6 +14,7 @@ import { Role } from '../user/user.types.js';
 import { ModuleDocument } from './schemas/module.schema.js';
 import { CreateModuleDTO } from './dto/create-module.dto.js';
 import { CreateLessonDTO } from './dto/create-lesson.dto.js';
+import { QueryCourseDTO } from './dto/query-course.dto.js';
 
 @Injectable()
 export class CourseService {
@@ -45,11 +46,30 @@ export class CourseService {
     };
   }
 
-  async findAll() {
+  async findAll(QueryCouresDto: QueryCourseDTO) {
+
+    const { page = 1, limit = 5 } = QueryCouresDto || {};
+
+    const skip = (page - 1) * limit;
+    const total = await this.coursemodel.countDocuments();
+
     const allCourse = await this.coursemodel
       .find()
+      .limit(limit)
+      .skip(skip)
       .populate('instructorId', 'fname lname email');
-    return allCourse;
+
+    return {
+      status: 200,
+      message: 'Fetch Course Sucessfully!',
+      meta: {
+        page,
+        limit,
+        totalItems: total,
+        totalPages: Math.ceil(total / limit)
+      },
+      data: allCourse,
+    };
   }
 
   async findOne(id: string) {

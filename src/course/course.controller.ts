@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, Query } from '@nestjs/common';
 import { CourseService } from './course.service.js';
 import { CreateCourseDto } from './dto/create-course.dto.js';
 import { UpdateCourseDto } from './dto/update-course.dto.js';
@@ -9,6 +9,7 @@ import { Roles } from '../auth/decorators/roles.decorators.js';
 import { Role } from '../user/user.types.js';
 import { CreateModuleDTO } from './dto/create-module.dto.js';
 import { CreateLessonDTO } from './dto/create-lesson.dto.js';
+import { QueryCourseDTO } from './dto/query-course.dto.js';
 
 @Controller('course')
 export class CourseController {
@@ -23,8 +24,8 @@ export class CourseController {
 
   @Get()
   @UseGuards(AuthGuard)
-  findAll() {
-    return this.courseService.findAll();
+  async findAll(@Query() QueryCouresDto: QueryCourseDTO) {
+    return this.courseService.findAll(QueryCouresDto);
   }
 
   @Get(':id')
