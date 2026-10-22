@@ -47,14 +47,41 @@ export class CourseService {
   }
 
   async findAll(QueryCouresDto: QueryCourseDTO) {
-
-    const { page = 1, limit = 5 } = QueryCouresDto || {};
+    const { page = 1, limit = 5, level, price, search } = QueryCouresDto || {};
 
     const skip = (page - 1) * limit;
-    const total = await this.coursemodel.countDocuments();
+
+    //filter by level and price
+    //price display the data which is under and equal to that price
+    const filter: Record<string, any> = {
+      ...(level && { level }),
+      ...(price && { price: { $lte: price } }),
+    };
+
+    //search by name and description
+    if (search?.trim()) {
+      const sanitizedSearch = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+      filter.$or = [
+        {
+          name: {
+            $regex: sanitizedSearch,
+            $options: 'i',
+          },
+        },
+        {
+          description: {
+            $regex: sanitizedSearch,
+            $options: 'i',
+          },
+        },
+      ];
+    }
+
+    const total = await this.coursemodel.countDocuments(filter);
 
     const allCourse = await this.coursemodel
-      .find()
+      .find(filter)
       .limit(limit)
       .skip(skip)
       .populate('instructorId', 'fname lname email');
@@ -66,7 +93,7 @@ export class CourseService {
         page,
         limit,
         totalItems: total,
-        totalPages: Math.ceil(total / limit)
+        totalPages: Math.ceil(total / limit),
       },
       data: allCourse,
     };
@@ -173,11 +200,13 @@ export class CourseService {
 
     // Push the module directly into course.modules
     course.modules.push({
-      name, description, lessons: [],
-    } as any)
+      name,
+      description,
+      lessons: [],
+    } as any);
 
     //Save the parent course document
-    await course.save()
+    await course.save();
 
     return {
       status: 200,
@@ -186,41 +215,54 @@ export class CourseService {
     };
   }
 
-  async createLesson(courseId: string, moduleId: string, user: { sub: string; role: Role }, createLessonDto: CreateLessonDTO){
-    const { name, videoUrl, duration, isFreePreview } = createLessonDto
+  async createLesson(
+    courseId: string,
+    moduleId: string,
+    user: { sub: string; role: Role },
+    createLessonDto: CreateLessonDTO,
+  ) {
+    const { name, videoUrl, duration, isFreePreview } = createLessonDto;
 
     //find the course
-    const course = await this.coursemodel.findById(courseId)
+    const course = await this.coursemodel.findById(courseId);
 
-    if(!course){
-      throw new NotFoundException('Course Not Found')
+    if (!course) {
+      throw new NotFoundException('Course Not Found');
     }
 
     // Verify Teacher ownership OR Admin
     const isInstructor = course.instructorId.toString() === user.sub;
     const isAdmin = user.role === Role.ADMIN;
 
-    if(!isInstructor && !isAdmin){
-      throw new ForbiddenException("You don't have permission to create this lesson")
+    if (!isInstructor && !isAdmin) {
+      throw new ForbiddenException(
+        "You don't have permission to create this lesson",
+      );
     }
 
     //find the target Module
-    const targetModule = course.modules.find((module) => (module as any)._id.toString() === moduleId)
+    const targetModule = course.modules.find(
+      (module) => (module as any)._id.toString() === moduleId,
+    );
 
-    if(!targetModule){
+    if (!targetModule) {
       throw new NotFoundException('Module not found');
     }
 
     // Push the lesson directly into targetModule.lessons
-    targetModule.lessons.push({name, videoUrl, duration, isFreePreview} as any)
+    targetModule.lessons.push({
+      name,
+      videoUrl,
+      duration,
+      isFreePreview,
+    } as any);
     //Save the parent course document
-    await course.save()
+    await course.save();
 
     return {
       status: 200,
       message: `${name} is created SucessFully`,
       data: course,
     };
-    
-  } 
+  }
 }

@@ -1,5 +1,6 @@
 import { Type } from "class-transformer"
-import { IsInt, IsOptional, Max, Min } from "class-validator"
+import { IsEnum, IsInt, IsOptional, IsString, Max, MaxLength, Min } from "class-validator"
+import { courseLevel } from "../course.type.js"
 
 export class QueryCourseDTO {
 
@@ -15,5 +16,19 @@ export class QueryCourseDTO {
     @Min(1)
     @Max(20) // Protects server against memory spikes!
     limit: number = 5
+
+    @IsOptional()
+    @IsEnum(courseLevel)
+    level?: courseLevel
+
+    @IsOptional()
+    @Type(() => Number)
+    @Min(0)
+    price: number
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(50)
+    search: string
 
 }
