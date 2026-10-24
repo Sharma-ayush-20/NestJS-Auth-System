@@ -6,11 +6,13 @@ import { Enrollment, EnrollmentSchema } from './schemas/enrollment.schema.js';
 import { JwtModule } from '@nestjs/jwt';
 import { Course, CourseSchema } from '../course/schemas/course.schema.js';
 import { User, UserSchema } from '../user/schemas/user.schema.js';
+import { Lesson, LessonSchema } from '../course/schemas/lesson.schema.js';
 
 @Module({
   imports: [
     MongooseModule.forFeature([ {name: Enrollment.name, schema: EnrollmentSchema}, 
-      {name: Course.name, schema: CourseSchema}, {name: User.name, schema: UserSchema}
+      {name: Course.name, schema: CourseSchema}, {name: User.name, schema: UserSchema},
+      {name: Lesson.name, schema: LessonSchema},
      ]),
     JwtModule,
   ],
