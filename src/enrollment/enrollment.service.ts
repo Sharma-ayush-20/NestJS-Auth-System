@@ -53,4 +53,22 @@ export class EnrollmentService {
     }
   }
 
+  async mycourses(user: { sub: string, role: Role }){
+    const enrollCourse = await this.enrollmentModel.find({
+      studentId: user.sub
+    }).populate({
+      path: 'courseId',
+      populate: {
+        path: 'instructorId',
+        select: 'fname lname'
+      } 
+    })
+
+    return {
+      status: 200,
+      message: "Your enrolled Courses",
+      data: enrollCourse
+    }
+  }
+
 }

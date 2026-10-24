@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Post, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Request, UseGuards } from '@nestjs/common';
 import { EnrollmentService } from './enrollment.service.js';
 import { AuthGuard } from '../auth/guards/auth.guards.js';
 import { RolesGuard } from '../auth/guards/roles.guards.js';
@@ -16,5 +16,12 @@ export class EnrollmentController {
   @Roles(Role.STUDENT)    
   enrollCourse(@Param('courseId', ParseObjectIdPipe) courseId: string, @Request() request: any){
     return this.enrollmentService.enrollcourse(courseId, request.user)
+  }
+
+  @Get('my-courses')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.STUDENT)
+  myCourses(@Request() request: any){
+    return this.enrollmentService.mycourses(request.user)
   }
 }
