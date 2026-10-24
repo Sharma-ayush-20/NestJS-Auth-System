@@ -6,6 +6,7 @@ import { UserModule } from './user/user.module.js';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
 import { CourseModule } from './course/course.module.js';
+import { EnrollmentModule } from './enrollment/enrollment.module.js';
 
 @Module({
   imports: [
@@ -13,7 +14,8 @@ import { CourseModule } from './course/course.module.js';
     AuthModule, 
     UserModule,
     MongooseModule.forRoot(process.env.MONGODB_URL as string),
-    CourseModule, //use to connect the database Globally
+    CourseModule,
+    EnrollmentModule, //use to connect the database Globally
   ],
   controllers: [AppController],
   providers: [AppService],
