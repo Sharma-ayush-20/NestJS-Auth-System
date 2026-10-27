@@ -8,11 +8,22 @@ import { ConfigModule } from '@nestjs/config';
 import { CourseModule } from './course/course.module.js';
 import { EnrollmentModule } from './enrollment/enrollment.module.js';
 import { ReviewsModule } from './reviews/reviews.module.js';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({isGlobal:true}), //nestjs can read this env files Globally
-    AuthModule, 
+    ConfigModule.forRoot({ isGlobal: true }), //nestjs can read this env files Globally
+
+    // Configure rate limiting
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000, // 60 seconds (1 minute window)
+        limit: 20, // max 20 requests per minute
+      },
+    ]),
+
+    AuthModule,
     UserModule,
     MongooseModule.forRoot(process.env.MONGODB_URL as string),
     CourseModule,
@@ -20,6 +31,13 @@ import { ReviewsModule } from './reviews/reviews.module.js';
     ReviewsModule, //use to connect the database Globally
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    // Apply the rate limiter globally across all routes
+    {
+      provide: APP_GUARD, //register the global guard to use for all routes
+      useClass: ThrottlerGuard, //use throttle guard for this
+    },
+  ],
 })
 export class AppModule {}
