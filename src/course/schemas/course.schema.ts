@@ -27,6 +27,13 @@ export class Course {
     @Prop({ type: [ModuleSchema], default: [] })
     modules: Module[]
 
+    //reviews
+    @Prop({ default: 0, min: 0, max: 5 })
+    averageRating: number;
+
+    @Prop({ default: 0 })
+    totalReviews: number;
+
 } 
 
 export const CourseSchema = SchemaFactory.createForClass(Course)
