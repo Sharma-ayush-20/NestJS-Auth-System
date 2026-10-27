@@ -1,3 +1,4 @@
+import 'multer';
 import {
   ForbiddenException,
   Injectable,
@@ -15,6 +16,7 @@ import { ModuleDocument } from './schemas/module.schema.js';
 import { CreateModuleDTO } from './dto/create-module.dto.js';
 import { CreateLessonDTO } from './dto/create-lesson.dto.js';
 import { QueryCourseDTO } from './dto/query-course.dto.js';
+import { CloudinaryService } from '../cloudinary/cloudinary.service.js';
 
 @Injectable()
 export class CourseService {
@@ -22,6 +24,7 @@ export class CourseService {
     @InjectModel(Course.name) private coursemodel: Model<CourseDocument>,
     @InjectModel(User.name) private usermodel: Model<UserDocument>,
     @InjectModel(Module.name) private modulemodel: Model<ModuleDocument>,
+    private cloudinaryService: CloudinaryService,
   ) {}
 
   async create(
@@ -60,7 +63,9 @@ export class CourseService {
 
     //search by name and description
     if (search?.trim()) {
-      const sanitizedSearch = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const sanitizedSearch = search
+        .trim()
+        .replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
       filter.$or = [
         {
@@ -263,6 +268,45 @@ export class CourseService {
       status: 200,
       message: `${name} is created SucessFully`,
       data: course,
+    };
+  }
+
+  async uploadThumbnail(
+    courseId: string,
+    user: { sub: string; role: Role },
+    file: Express.Multer.File,
+  ) {
+    const course = await this.coursemodel.findById(courseId);
+    if (!course) {
+      throw new NotFoundException('Course not found');
+    }
+
+    const isInstructor = course.instructorId.toString() === user.sub;
+    const isAdmin = user.role === Role.ADMIN;
+    if (!isInstructor && !isAdmin) {
+      throw new ForbiddenException(
+        "You don't have permission to update this course",
+      );
+    }
+
+    //upload to cloudinary
+    const uploadResult = await this.cloudinaryService.uploadImage(
+      file,
+      'courses',
+    );
+
+    // Save secure URL to course document
+    course.thumbnail = uploadResult.secure_url;
+
+    await course.save()
+
+    return {
+      status: 200,
+      message: 'Course thumbnail uploaded successfully',
+      data: {
+        thumbnail: course.thumbnail,
+        course,
+      },
     };
   }
 }

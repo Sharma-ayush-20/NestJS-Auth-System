@@ -1,4 +1,20 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Request,
+  Query,
+  UseInterceptors,
+  UploadedFile,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
+} from '@nestjs/common';
 import { CourseService } from './course.service.js';
 import { CreateCourseDto } from './dto/create-course.dto.js';
 import { UpdateCourseDto } from './dto/update-course.dto.js';
@@ -10,6 +26,8 @@ import { Role } from '../user/user.types.js';
 import { CreateModuleDTO } from './dto/create-module.dto.js';
 import { CreateLessonDTO } from './dto/create-lesson.dto.js';
 import { QueryCourseDTO } from './dto/query-course.dto.js';
+import 'multer';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('course')
 export class CourseController {
@@ -37,8 +55,11 @@ export class CourseController {
   @Patch(':id')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.TEACHER, Role.ADMIN)
-  update(@Param('id', ParseObjectIdPipe) id: string, @Body() updateCourseDto: UpdateCourseDto,
-  @Request() request: any) {
+  update(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Body() updateCourseDto: UpdateCourseDto,
+    @Request() request: any,
+  ) {
     return this.courseService.update(id, updateCourseDto, request.user);
   }
 
@@ -52,14 +73,48 @@ export class CourseController {
   @Post(':id/module')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.TEACHER)
-  createmodule(@Param('id', ParseObjectIdPipe) id: string, @Request() request: any, @Body() createModuleDto: CreateModuleDTO) {
-    return this.courseService.createModule(id, request.user, createModuleDto)  
+  createmodule(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Request() request: any,
+    @Body() createModuleDto: CreateModuleDTO,
+  ) {
+    return this.courseService.createModule(id, request.user, createModuleDto);
   }
 
   @Post(':courseId/module/:moduleId/lesson')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.TEACHER)
-  createlesson(@Param('courseId', ParseObjectIdPipe) courseId: string, @Param('moduleId', ParseObjectIdPipe) moduleId: string, @Request() request: any, @Body() createLessonDto: CreateLessonDTO){
-    return this.courseService.createLesson(courseId, moduleId, request.user, createLessonDto)
+  createlesson(
+    @Param('courseId', ParseObjectIdPipe) courseId: string,
+    @Param('moduleId', ParseObjectIdPipe) moduleId: string,
+    @Request() request: any,
+    @Body() createLessonDto: CreateLessonDTO,
+  ) {
+    return this.courseService.createLesson(
+      courseId,
+      moduleId,
+      request.user,
+      createLessonDto,
+    );
+  }
+
+  @Patch(':courseId/thumbnail')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.TEACHER)
+  @UseInterceptors(FileInterceptor('thumbnail'))
+  uploadThumbnail(
+    @Param('courseId', ParseObjectIdPipe) courseId: string,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 2 * 1024 * 1024 }), // 2MB max
+          new FileTypeValidator({ fileType: '.(png|jpeg|jpg|webp)' }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+    @Request() request: any,
+  ) {
+    return this.courseService.uploadThumbnail(courseId, request.user, file);
   }
 }

@@ -34,6 +34,10 @@ export class Course {
     @Prop({ default: 0 })
     totalReviews: number;
 
+    //course image
+    @Prop({ required: false })
+    thumbnail?: string;
+
 } 
 
 export const CourseSchema = SchemaFactory.createForClass(Course)
