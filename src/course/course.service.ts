@@ -17,6 +17,7 @@ import { CreateModuleDTO } from './dto/create-module.dto.js';
 import { CreateLessonDTO } from './dto/create-lesson.dto.js';
 import { QueryCourseDTO } from './dto/query-course.dto.js';
 import { CloudinaryService } from '../cloudinary/cloudinary.service.js';
+import { RedisService } from '../redis/redis.service.js';
 
 @Injectable()
 export class CourseService {
@@ -25,6 +26,7 @@ export class CourseService {
     @InjectModel(User.name) private usermodel: Model<UserDocument>,
     @InjectModel(Module.name) private modulemodel: Model<ModuleDocument>,
     private cloudinaryService: CloudinaryService,
+    private redisService: RedisService,
   ) {}
 
   async create(
@@ -42,6 +44,8 @@ export class CourseService {
     });
     await newCourse.save();
 
+    await this.redisService.clear('courses:*');
+
     return {
       status: 201,
       message: 'Course Created SuccessFully!',
@@ -50,6 +54,16 @@ export class CourseService {
   }
 
   async findAll(QueryCouresDto: QueryCourseDTO) {
+
+    // Create a unique cache key for this specific search/page
+    const cacheKey = `courses:${JSON.stringify(QueryCouresDto)}`;
+
+    // Check Redis first!
+    const cachedData = await this.redisService.get(cacheKey)
+    if (cachedData) {
+        return cachedData;
+    }
+
     const { page = 1, limit = 5, level, price, search } = QueryCouresDto || {};
 
     const skip = (page - 1) * limit;
@@ -91,7 +105,7 @@ export class CourseService {
       .skip(skip)
       .populate('instructorId', 'fname lname email');
 
-    return {
+    const result = {
       status: 200,
       message: 'Fetch Course Sucessfully!',
       meta: {
@@ -102,6 +116,11 @@ export class CourseService {
       },
       data: allCourse,
     };
+
+    // SAVE TO REDIS for 60 seconds
+    await this.redisService.set(cacheKey, result, 60)
+
+    return result;
   }
 
   async findOne(id: string) {
@@ -144,6 +163,9 @@ export class CourseService {
     if (!updatedCourse) {
       throw new NotFoundException('Course not found');
     }
+
+    await this.redisService.clear('courses:*');
+
     return {
       status: 200,
       message: 'Course updated Sucessfully!',
@@ -173,6 +195,9 @@ export class CourseService {
     if (!deletedCourse) {
       throw new NotFoundException('Course not found');
     }
+
+    await this.redisService.clear('courses:*');
+
     return {
       status: 200,
       message: `${deletedCourse?.name} is deleted Successfully!`,
