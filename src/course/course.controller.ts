@@ -28,11 +28,15 @@ import { CreateLessonDTO } from './dto/create-lesson.dto.js';
 import { QueryCourseDTO } from './dto/query-course.dto.js';
 import 'multer';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Courses')
+@ApiBearerAuth()
 @Controller('course')
 export class CourseController {
   constructor(private readonly courseService: CourseService) {}
 
+  @ApiOperation({ summary: 'Create a new course (Teacher/Admin only)' })
   @Post()
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.TEACHER, Role.ADMIN)
@@ -40,18 +44,21 @@ export class CourseController {
     return this.courseService.create(createCourseDto, request.user);
   }
 
+  @ApiOperation({ summary: 'Get all courses with pagination, search & Redis caching' })
   @Get()
   @UseGuards(AuthGuard)
   async findAll(@Query() QueryCouresDto: QueryCourseDTO) {
     return this.courseService.findAll(QueryCouresDto);
   }
 
+  @ApiOperation({ summary: 'Get course details by ID' })
   @Get(':id')
   @UseGuards(AuthGuard)
   findOne(@Param('id', ParseObjectIdPipe) id: string) {
     return this.courseService.findOne(id);
   }
 
+   @ApiOperation({ summary: 'Update course details (Instructor/Admin only)' })
   @Patch(':id')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.TEACHER, Role.ADMIN)
@@ -63,6 +70,7 @@ export class CourseController {
     return this.courseService.update(id, updateCourseDto, request.user);
   }
 
+  @ApiOperation({ summary: 'Delete a course (Instructor/Admin only)' })
   @Delete(':id')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.TEACHER)
@@ -70,6 +78,7 @@ export class CourseController {
     return this.courseService.remove(id, request.user);
   }
 
+  @ApiOperation({ summary: 'Add a new module to a course' })
   @Post(':id/module')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.TEACHER)
@@ -81,6 +90,7 @@ export class CourseController {
     return this.courseService.createModule(id, request.user, createModuleDto);
   }
 
+  @ApiOperation({ summary: 'Add a new lesson inside a course module' })
   @Post(':courseId/module/:moduleId/lesson')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.TEACHER)
@@ -98,6 +108,7 @@ export class CourseController {
     );
   }
 
+  @ApiOperation({ summary: 'Upload course thumbnail image to Cloudinary' })
   @Patch(':courseId/thumbnail')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.TEACHER)

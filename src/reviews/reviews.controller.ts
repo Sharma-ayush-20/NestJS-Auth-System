@@ -6,12 +6,16 @@ import { Roles } from '../auth/decorators/roles.decorators.js';
 import { Role } from '../user/user.types.js';
 import { ReviewCourseDTO } from './dto/review.dto.js';
 import { ParseObjectIdPipe } from '../common/pipes/parse.object.id.js';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Reviews')
+@ApiBearerAuth()
 @Controller('reviews')
 export class ReviewsController {
 
     constructor(private readonly reviewService: ReviewsService){}
 
+    @ApiOperation({ summary: 'Submit a course rating & review (Enrolled students only)' })
     @Post('/:courseId')
     @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.STUDENT)
