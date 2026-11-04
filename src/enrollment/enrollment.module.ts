@@ -17,6 +17,7 @@ import { Lesson, LessonSchema } from '../course/schemas/lesson.schema.js';
     JwtModule,
   ],
   controllers: [EnrollmentController],
-  providers: [EnrollmentService]
+  providers: [EnrollmentService],
+  exports: [EnrollmentService],
 })
 export class EnrollmentModule {}

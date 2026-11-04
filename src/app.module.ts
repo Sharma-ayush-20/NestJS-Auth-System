@@ -11,6 +11,9 @@ import { ReviewsModule } from './reviews/reviews.module.js';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { RedisModule } from './redis/redis.module.js';
+import { PaymentService } from './payment/payment.service.js';
+import { PaymentController } from './payment/payment.controller.js';
+import { PaymentModule } from './payment/payment.module.js';
 
 @Module({
   imports: [
@@ -30,7 +33,7 @@ import { RedisModule } from './redis/redis.module.js';
     CourseModule,
     EnrollmentModule,
     ReviewsModule, //use to connect the database Globally
-    RedisModule
+    RedisModule, PaymentModule
   ],
   controllers: [AppController],
   providers: [
