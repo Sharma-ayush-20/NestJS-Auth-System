@@ -128,4 +128,13 @@ export class CourseController {
   ) {
     return this.courseService.uploadThumbnail(courseId, request.user, file);
   }
+
+  //teacher analytics
+  @ApiOperation({ summary: 'Teacher Analytics regarding to therir course, enrollment, student, review and all details' })
+  @Get('instructor/analytics')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.TEACHER, Role.ADMIN)
+  teacherAnalytics(@Request() request: any){
+    return this.courseService.teacheranalytics(request.user)
+  }
 }

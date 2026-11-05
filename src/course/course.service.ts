@@ -18,6 +18,12 @@ import { CreateLessonDTO } from './dto/create-lesson.dto.js';
 import { QueryCourseDTO } from './dto/query-course.dto.js';
 import { CloudinaryService } from '../cloudinary/cloudinary.service.js';
 import { RedisService } from '../redis/redis.service.js';
+import {
+  Enrollment,
+  EnrollmentDocument,
+} from '../enrollment/schemas/enrollment.schema.js';
+import e from 'express';
+import { Types } from 'mongoose';
 
 @Injectable()
 export class CourseService {
@@ -25,6 +31,8 @@ export class CourseService {
     @InjectModel(Course.name) private coursemodel: Model<CourseDocument>,
     @InjectModel(User.name) private usermodel: Model<UserDocument>,
     @InjectModel(Module.name) private modulemodel: Model<ModuleDocument>,
+    @InjectModel(Enrollment.name)
+    private enrollmentModel: Model<EnrollmentDocument>,
     private cloudinaryService: CloudinaryService,
     private redisService: RedisService,
   ) {}
@@ -54,14 +62,13 @@ export class CourseService {
   }
 
   async findAll(QueryCouresDto: QueryCourseDTO) {
-
     // Create a unique cache key for this specific search/page
     const cacheKey = `courses:${JSON.stringify(QueryCouresDto)}`;
 
     // Check Redis first!
-    const cachedData = await this.redisService.get(cacheKey)
+    const cachedData = await this.redisService.get(cacheKey);
     if (cachedData) {
-        return cachedData;
+      return cachedData;
     }
 
     const { page = 1, limit = 5, level, price, search } = QueryCouresDto || {};
@@ -118,7 +125,7 @@ export class CourseService {
     };
 
     // SAVE TO REDIS for 60 seconds
-    await this.redisService.set(cacheKey, result, 60)
+    await this.redisService.set(cacheKey, result, 60);
 
     return result;
   }
@@ -323,7 +330,7 @@ export class CourseService {
     // Save secure URL to course document
     course.thumbnail = uploadResult.secure_url;
 
-    await course.save()
+    await course.save();
 
     return {
       status: 200,
@@ -334,4 +341,61 @@ export class CourseService {
       },
     };
   }
+
+  async teacheranalytics(user: { sub: string; role: Role }) {
+    //find the course of that particular teacher
+    const teacherCreatedCourse = await this.coursemodel.find({
+      instructorId: user.sub,
+    });
+
+    const courseStringIds = teacherCreatedCourse.map((c) => c._id.toString());
+
+    const enrollementstats = await this.enrollmentModel.aggregate([
+      {
+        $match: {
+          courseId: { $in: courseStringIds },
+        },
+      },
+      {
+        $group: {
+          _id: '$courseId',
+          totalStudents: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // Map courseId -> count of students
+    const enrollmentMap = new Map<string, number>();
+    for (const stat of enrollementstats) {
+      enrollmentMap.set(stat._id.toString(), stat.totalStudents);
+    }
+
+    let totalRevenue = 0;
+    let totalStudentsEnrolled = 0;
+
+    const courseStats = teacherCreatedCourse.map((course) => {
+      const studentCount = enrollmentMap.get(course._id.toString()) || 0;
+      const courseRevenue = studentCount * (course.price || 0);
+      totalRevenue += courseRevenue;
+      totalStudentsEnrolled += studentCount;
+      return {
+        courseId: course._id,
+        courseName: course.name,
+        price: course.price,
+        level: course.level,
+        averageRating: course.averageRating || 0,
+        totalReviews: course.totalReviews || 0,
+        enrolledStudentsCount: studentCount,
+        courseRevenue: courseRevenue,
+      };
+    });
+
+    return {
+      totalCourses: teacherCreatedCourse.length,
+      totalStudentsEnrolled,
+      totalRevenue,
+      courses: courseStats,
+    };
+  }
+  
 }

@@ -7,10 +7,11 @@ import { JwtModule } from '@nestjs/jwt';
 import { User, UserSchema } from '../user/schemas/user.schema.js';
 import { ModuleSchema } from './schemas/module.schema.js';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module.js';
+import { Enrollment, EnrollmentSchema } from '../enrollment/schemas/enrollment.schema.js';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{name: Course.name, schema: CourseSchema}, {name: User.name, schema: UserSchema}, {name: Module.name, schema: ModuleSchema}]),
+    MongooseModule.forFeature([{name: Course.name, schema: CourseSchema}, {name: User.name, schema: UserSchema}, {name: Module.name, schema: ModuleSchema}, {name: Enrollment.name, schema: EnrollmentSchema}]),
     JwtModule,
     CloudinaryModule,
   ],
