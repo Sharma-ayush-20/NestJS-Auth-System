@@ -7,6 +7,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { Course, CourseSchema } from '../course/schemas/course.schema.js';
 import { User, UserSchema } from '../user/schemas/user.schema.js';
 import { Lesson, LessonSchema } from '../course/schemas/lesson.schema.js';
+import { MailModule } from '../mail/mail.module.js';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { Lesson, LessonSchema } from '../course/schemas/lesson.schema.js';
       {name: Lesson.name, schema: LessonSchema},
      ]),
     JwtModule,
+    MailModule,
   ],
   controllers: [EnrollmentController],
   providers: [EnrollmentService],

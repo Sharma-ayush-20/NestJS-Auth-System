@@ -19,6 +19,9 @@ import { Payment, PaymentDocument } from './schemas/payment.schema.js';
 import { PaymentStatus } from './types/payment-status.js';
 import { VerifyPaymentDTO } from './dto/verify-payment.dto.js';
 import * as crypto from 'crypto';
+import { User, UserDocument } from '../user/schemas/user.schema.js';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
 @Injectable()
 export class PaymentService {
@@ -31,6 +34,8 @@ export class PaymentService {
     private enrollmentModel: Model<EnrollmentDocument>,
     private enrollmentService: EnrollmentService,
     @InjectModel(Payment.name) private paymentModel: Model<PaymentDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectQueue('mail-queue') private mailQueue: Queue,
   ) {
     // Initialize Razorpay instance with keys from .env
     this.razorpay = new Razorpay({
@@ -131,6 +136,21 @@ export class PaymentService {
       sub: user.sub,
       role: Role.STUDENT,
     });
+
+    //send payment Receipt Email via Queue
+    const student = await this.userModel.findById(user.sub)
+    const course = await this.courseModel.findById(courseId)
+
+    if(student && course){
+      await this.mailQueue.add('sendPaymentReceipt', {
+        to: student.email,
+        name: student.fname,
+        courseName: course.name,
+        amount: payment.amount,
+        paymentId: razorpay_payment_id,
+      }, { attempts: 3, backoff: 5000 })
+    }
+
 
     return {
       message: 'Payment verified and course enrolled successfully!',

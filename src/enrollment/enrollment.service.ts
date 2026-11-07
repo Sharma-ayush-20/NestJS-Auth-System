@@ -12,6 +12,8 @@ import { Course, CourseDocument } from '../course/schemas/course.schema.js';
 import { User, UserDocument } from '../user/schemas/user.schema.js';
 import { Lesson, LessonDocument } from '../course/schemas/lesson.schema.js';
 import { EnrollmentStatus } from './types/enrollment.status.type.js';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
 @Injectable()
 export class EnrollmentService {
@@ -24,6 +26,7 @@ export class EnrollmentService {
     private userModel: Model<UserDocument>,
     @InjectModel(Lesson.name)
     private lessonModel: Model<LessonDocument>,
+    @InjectQueue('mail-queue') private mailQueue: Queue
   ) {}
 
   async enrollcourse(courseId: string, user: { sub: string; role: Role }) {
@@ -53,6 +56,16 @@ export class EnrollmentService {
       courseId: courseId,
     });
     await enrollment.save();
+
+    //send welcome mail to student who enroll in that particular course
+    //add this process to queue
+    //try 3 times if job failed and 5 second baad retry karega
+
+    await this.mailQueue.add('sendWelcomeEmail', {
+      to: student.email,
+      name: student.fname,
+      courseName: course.name,
+    }, {attempts: 3, backoff: 5000})
 
     return {
       status: 200,

@@ -4,16 +4,17 @@ import { AppService } from './app.service.js';
 import { AuthModule } from './auth/auth.module.js';
 import { UserModule } from './user/user.module.js';
 import { MongooseModule } from '@nestjs/mongoose';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CourseModule } from './course/course.module.js';
 import { EnrollmentModule } from './enrollment/enrollment.module.js';
 import { ReviewsModule } from './reviews/reviews.module.js';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { RedisModule } from './redis/redis.module.js';
-import { PaymentService } from './payment/payment.service.js';
-import { PaymentController } from './payment/payment.controller.js';
 import { PaymentModule } from './payment/payment.module.js';
+import { BullModule } from '@nestjs/bullmq';
+import { MailService } from './mail/mail.service.js';
+import { MailModule } from './mail/mail.module.js';
 
 @Module({
   imports: [
@@ -33,7 +34,19 @@ import { PaymentModule } from './payment/payment.module.js';
     CourseModule,
     EnrollmentModule,
     ReviewsModule, //use to connect the database Globally
-    RedisModule, PaymentModule
+    RedisModule,
+    PaymentModule,
+    // BullMQ Connection to Redis
+    BullModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        connection: {
+          host: configService.get<string>('REDIS_HOST', 'localhost'),
+          port: Number(configService.get<number>('REDIS_PORT', 6379)),
+        },
+      }),
+    }),
+    MailModule,
   ],
   controllers: [AppController],
   providers: [
@@ -43,6 +56,7 @@ import { PaymentModule } from './payment/payment.module.js';
       provide: APP_GUARD, //register the global guard to use for all routes
       useClass: ThrottlerGuard, //use throttle guard for this
     },
+    MailService,
   ],
 })
 export class AppModule {}
