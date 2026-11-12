@@ -26,4 +26,33 @@ export class CloudinaryService {
       Readable.from(file.buffer).pipe(uploadStream);
     });
   }
+
+  // Upload a raw PDF Buffer to cloudinary
+  async uploadPdfBuffer(
+    pdfBuffer: Buffer,
+    fileName: string,
+    folder: string = `lms/certificates`,
+  ): Promise<UploadApiResponse> {
+    return new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder,
+          public_id: fileName,
+          resource_type: 'image',
+          format: 'pdf',
+        },
+        (error, result) => {
+          if(error){
+            return reject(new BadRequestException(error.message));
+          }
+          if(!result){
+            return reject(new BadRequestException('PDF upload failed'));
+          }
+          resolve(result);
+        },
+      );
+
+      Readable.from(pdfBuffer).pipe(uploadStream);
+    });
+  }
 }

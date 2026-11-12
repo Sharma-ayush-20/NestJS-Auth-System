@@ -26,7 +26,8 @@ export class EnrollmentService {
     private userModel: Model<UserDocument>,
     @InjectModel(Lesson.name)
     private lessonModel: Model<LessonDocument>,
-    @InjectQueue('mail-queue') private mailQueue: Queue
+    @InjectQueue('mail-queue') private mailQueue: Queue,
+    @InjectQueue('certificate-queue') private certificateQueue: Queue,
   ) {}
 
   async enrollcourse(courseId: string, user: { sub: string; role: Role }) {
@@ -61,11 +62,15 @@ export class EnrollmentService {
     //add this process to queue
     //try 3 times if job failed and 5 second baad retry karega
 
-    await this.mailQueue.add('sendWelcomeEmail', {
-      to: student.email,
-      name: student.fname,
-      courseName: course.name,
-    }, {attempts: 3, backoff: 5000})
+    await this.mailQueue.add(
+      'sendWelcomeEmail',
+      {
+        to: student.email,
+        name: student.fname,
+        courseName: course.name,
+      },
+      { attempts: 3, backoff: 5000 },
+    );
 
     return {
       status: 200,
@@ -99,7 +104,6 @@ export class EnrollmentService {
     lessonId: string,
     user: { sub: string; role: Role },
   ) {
-
     //find the course
     const course = await this.courseModel.findById(courseId);
     if (!course) {
@@ -138,28 +142,38 @@ export class EnrollmentService {
       (id) => id.toString() === lessonId,
     );
 
-    if(!isAlreadyCompleted){
-      enrollment.completedLessons.push((foundLesson as any)._id)
+    if (!isAlreadyCompleted) {
+      enrollment.completedLessons.push((foundLesson as any)._id);
     }
 
     // Calculate Total Lessons
     let totalLessons = 0;
-    for(let module of course.modules){
-      totalLessons = totalLessons + module.lessons.length
+    for (let module of course.modules) {
+      totalLessons = totalLessons + module.lessons.length;
     }
 
     // Progress Percentage (%)
     const progressPercentage = Math.round(
-      (enrollment.completedLessons.length / totalLessons) * 100
-    )
+      (enrollment.completedLessons.length / totalLessons) * 100,
+    );
 
     //update in enrollment
-    enrollment.progress = progressPercentage
+    enrollment.progress = progressPercentage;
 
     // Did they reach 100%? Mark as COMPLETED!
-    if(enrollment.progress === 100){
-      enrollment.status = EnrollmentStatus.COMPLETED
+    if (enrollment.progress === 100) {
+      enrollment.status = EnrollmentStatus.COMPLETED;
       enrollment.completedAt = new Date();
+
+      //Trigger Certificate Generation via BullMQ in background
+      await this.certificateQueue.add(
+        'generate-certificate',
+        {
+          studentId: user.sub,
+          courseId,
+        },
+        { attempts: 3, backoff: 5000 },
+      );
     }
 
     //save the updated Document
@@ -175,6 +189,5 @@ export class EnrollmentService {
         status: enrollment.status,
       },
     };
-
   }
 }

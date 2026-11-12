@@ -15,6 +15,7 @@ import { PaymentModule } from './payment/payment.module.js';
 import { BullModule } from '@nestjs/bullmq';
 import { MailService } from './mail/mail.service.js';
 import { MailModule } from './mail/mail.module.js';
+import { CertificateModule } from './certificate/certificate.module.js';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { MailModule } from './mail/mail.module.js';
       }),
     }),
     MailModule,
+    CertificateModule,
   ],
   controllers: [AppController],
   providers: [

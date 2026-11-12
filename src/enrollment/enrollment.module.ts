@@ -8,6 +8,7 @@ import { Course, CourseSchema } from '../course/schemas/course.schema.js';
 import { User, UserSchema } from '../user/schemas/user.schema.js';
 import { Lesson, LessonSchema } from '../course/schemas/lesson.schema.js';
 import { MailModule } from '../mail/mail.module.js';
+import { CertificateModule } from '../certificate/certificate.module.js';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { MailModule } from '../mail/mail.module.js';
      ]),
     JwtModule,
     MailModule,
+    CertificateModule,
   ],
   controllers: [EnrollmentController],
   providers: [EnrollmentService],
