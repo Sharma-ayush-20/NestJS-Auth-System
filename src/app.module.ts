@@ -16,6 +16,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { MailService } from './mail/mail.service.js';
 import { MailModule } from './mail/mail.module.js';
 import { CertificateModule } from './certificate/certificate.module.js';
+import { AiModule } from './ai/ai.module.js';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { CertificateModule } from './certificate/certificate.module.js';
     }),
     MailModule,
     CertificateModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [
