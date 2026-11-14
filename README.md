@@ -1,114 +1,244 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 🎓 Enterprise LMS Backend (Learning Management System)
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A production-grade, scalable Learning Management System (LMS) backend built with **NestJS**, **MongoDB**, **Redis**, **BullMQ**, and **Google Gemini AI**.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Designed with clean architecture, enterprise security, asynchronous background job processing, automated payment lifecycles, PDF generation, and generative AI capabilities.
 
-## Description
+---
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 🌟 Key Features
 
-## Project setup
+### 🔐 Authentication & Role-Based Access Control (RBAC)
+- **JWT Authentication** with password hashing using `bcrypt`.
+- **Granular Roles:** `ADMIN`, `TEACHER`, and `STUDENT`.
+- Custom decorators (`@Roles()`) and guards (`AuthGuard`, `RolesGuard`) for endpoint security.
 
-```bash
-$ npm install
+### 📚 Course Management & Query Engine
+- Modular curriculum architecture: **Courses ➔ Modules ➔ Lessons** (embedded subdocuments).
+- Advanced query engine featuring pagination, search, price/level filtering, and regex sanitization.
+- Object-level authorization (BOLA/IDOR protection) ensuring teachers only modify their own courses.
+
+### 📈 Enrollment Engine & Progress Tracking
+- Idempotent enrollment checks preventing duplicate purchases.
+- Lesson completion tracking with dynamic percentage calculation.
+- Automated course completion detection triggering asynchronous workflows.
+
+### 💳 Payment Lifecycle & Automated Webhooks (Razorpay)
+- Two-step payment flow: Order creation and HMAC-SHA256 signature verification.
+- Transaction state machine: `PENDING` ➔ `SUCCESS` / `FAILED`.
+- Automated post-payment enrollment and branded HTML email receipts via background queues.
+
+### 📬 Asynchronous Job Queues (BullMQ & Redis)
+- **Email Queue (`mail-queue`):** Asynchronous delivery of welcome emails and payment receipts using Nodemailer with responsive HTML templates.
+- **Certificate Queue (`certificate-queue`):** Asynchronous generation of verification-backed PDF certificates upon 100% course completion.
+
+### 📜 Dynamic PDF Certificate Engine
+- Dynamic vector PDF generation using `PDFDocument` (PDFKit) featuring custom borders, typography, student name, and unique verification tokens.
+- Automated stream upload to **Cloudinary** media storage.
+- Public certificate verification endpoint (`GET /certificate/verify/:id`).
+
+### 🤖 Generative AI Engine (Google Gemini 2.0 Flash)
+- **Curriculum Generator (`POST /ai/generate-curriculum`):** Allows teachers to generate full course syllabi (modules, lessons, and summaries) using structured JSON output from Gemini.
+- **AI Course Assistant (`POST /ai/course/:id/ask`):** Context-aware Q&A teaching assistant for enrolled students, dynamically feeding course metadata and module syllabus into Gemini prompt context.
+
+### ⚡ Caching & Performance
+- **Redis Cache-Aside Pattern:** Ultra-low latency course listings cached via `ioredis`.
+- **Proactive Cache Busting:** Automatically invalidates cached catalog on course create, update, or delete.
+
+### 🛡️ Production Security & Architecture
+- **Rate Limiting:** IP-level throttling with `@nestjs/throttler` (strict login/register limits).
+- **HTTP Hardening:** Security headers using `helmet`.
+- **Global Filters & Interceptors:** Centralized exception handling (`AllExceptionsFilter`) and uniform API response envelopes (`TransformInterceptor`).
+- **Interactive Documentation:** Fully documented with **Swagger (OpenAPI 3.0)** and Bearer auth support.
+
+---
+
+## 🏗️ System Architecture
+
+```mermaid
+flowchart TD
+    Client([Client / Web / Mobile]) -->|HTTP / HTTPS| Gate[Helmet & Throttler Guards]
+    Gate --> JWT[JWT Auth & RBAC Guards]
+    JWT --> Controller[NestJS Controllers]
+
+    subgraph Core Services
+        Controller --> CourseSvc[Course Service]
+        Controller --> EnrollSvc[Enrollment Service]
+        Controller --> PaySvc[Payment Service]
+        Controller --> AiSvc[Gemini AI Service]
+    end
+
+    subgraph Data & Cache
+        CourseSvc <-->|Cache Aside| Redis[(Redis Cache)]
+        CourseSvc <--> Mongo[(MongoDB Atlas)]
+        EnrollSvc <--> Mongo
+        PaySvc <--> Mongo
+    end
+
+    subgraph Async Message Queues
+        EnrollSvc -->|Job: Send Welcome Email| MailQ[(BullMQ: mail-queue)]
+        PaySvc -->|Job: Send Receipt| MailQ
+        EnrollSvc -->|Job: Generate Certificate| CertQ[(BullMQ: certificate-queue)]
+    end
+
+    subgraph Background Workers & Third-Party
+        MailQ --> MailWorker[Mail Worker] --> SMTP[Gmail / Nodemailer SMTP]
+        CertQ --> CertWorker[Certificate Worker] --> PDFKit[PDFKit Engine]
+        PDFKit --> Cloudinary[Cloudinary Storage]
+        AiSvc <--> Gemini[Google Gemini 2.0 Flash API]
+        PaySvc <--> Razorpay[Razorpay Payment Gateway]
+    end
 ```
 
-## Compile and run the project
+---
 
+## 🛠️ Tech Stack
+
+- **Runtime & Framework:** Node.js, TypeScript, [NestJS](https://nestjs.com/)
+- **Database & ODM:** [MongoDB](https://www.mongodb.com/), [Mongoose](https://mongoosejs.com/)
+- **In-Memory Store & Queues:** [Redis](https://redis.io/) (ioredis), [BullMQ](https://bullmq.io/)
+- **AI / LLM:** Google Gemini API (`@google/genai`)
+- **Payments:** Razorpay API (`razorpay`)
+- **Storage & Assets:** Cloudinary (`cloudinary`)
+- **Documents & PDF:** PDFKit (`pdfkit`)
+- **Email:** Nodemailer (`nodemailer`)
+- **API Documentation:** Swagger / OpenAPI (`@nestjs/swagger`)
+- **Containerization:** Docker & Docker Compose
+
+---
+
+## 🚀 Getting Started
+
+### 1. Prerequisites
+- [Node.js](https://nodejs.org/) (v18+)
+- [Docker](https://www.docker.com/) (for Redis)
+- MongoDB instance (Local or MongoDB Atlas)
+
+### 2. Clone the Repository
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+git clone https://github.com/your-username/lms-backend.git
+cd lms-backend
 ```
 
-## Run tests
-
+### 3. Install Dependencies
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm install
 ```
 
-## Deployment
+### 4. Configure Environment Variables
+Create a `.env` file in the root directory:
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+```env
+# Application
+PORT=3000
+NODE_ENV=development
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+# Database
+MONGODB_URL=mongodb+srv://<username>:<password>@cluster.mongodb.net/lms?retryWrites=true&w=majority
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# JWT
+JWT_SECRET=your_super_secret_jwt_key
+JWT_EXPIRES_IN=7d
+
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# Google Gemini AI
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-2.0-flash
+
+# Razorpay
+RAZORPAY_KEY_ID=your_razorpay_key_id
+RAZORPAY_KEY_SECRET=your_razorpay_secret
+
+# Cloudinary
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+
+# Mail (SMTP)
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USER=your_email@gmail.com
+MAIL_PASS=your_app_password
+MAIL_FROM="LMS Academy <noreply@lmsacademy.com>"
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 5. Start Redis with Docker
+```bash
+docker compose -f docker/docker-compose.yml up -d
+```
 
-## Observability
+### 6. Run the Application
+```bash
+# Development mode
+npm run start:dev
 
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
+# Production build
+npm run build
+npm run start:prod
+```
 
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
+---
 
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
+## 📖 API Documentation (Swagger)
 
-## Resources
+Once the application is running, navigate to:
+```
+http://localhost:3000/api
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+Use the **Authorize** button to test protected routes by pasting a valid Bearer JWT.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observer](https://observer.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+---
 
-## Support
+## 🧪 Core API Endpoints
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+### 🔐 Authentication
+| Method | Endpoint | Description | Role |
+|---|---|---|---|
+| `POST` | `/auth/register` | Register a new user | Public |
+| `POST` | `/auth/login` | Authenticate and obtain JWT | Public |
 
-## Stay in touch
+### 📚 Courses
+| Method | Endpoint | Description | Role |
+|---|---|---|---|
+| `GET` | `/course` | List all courses (cached, paginated, filtered) | Public |
+| `GET` | `/course/:id` | Get course details by ID | Public |
+| `POST` | `/course` | Create a new course | Teacher, Admin |
+| `PATCH` | `/course/:id` | Update course details | Teacher (Owner), Admin |
+| `DELETE` | `/course/:id` | Delete course | Teacher (Owner), Admin |
+| `PATCH` | `/course/:id/thumbnail` | Upload course thumbnail | Teacher (Owner), Admin |
+| `GET` | `/course/instructor/analytics` | View revenue & enrollment stats | Teacher |
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### 📈 Enrollment & Progress
+| Method | Endpoint | Description | Role |
+|---|---|---|---|
+| `GET` | `/enrollment/my-courses` | Get logged-in user enrollments | Student |
+| `POST` | `/enrollment/:courseId/complete-lesson` | Mark lesson complete & calculate progress | Student |
 
-## License
+### 💳 Payments
+| Method | Endpoint | Description | Role |
+|---|---|---|---|
+| `POST` | `/payment/create-order` | Create Razorpay order | Student |
+| `POST` | `/payment/verify` | Verify payment signature & auto-enroll | Student |
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+### 🤖 Generative AI
+| Method | Endpoint | Description | Role |
+|---|---|---|---|
+| `POST` | `/ai/generate-curriculum` | Generate course syllabus with Gemini | Teacher, Admin |
+| `POST` | `/ai/course/:courseId/ask` | Context-aware AI Teaching Assistant | Student (Enrolled) |
+
+### 📜 Certificates
+| Method | Endpoint | Description | Role |
+|---|---|---|---|
+| `GET` | `/certificate/verify/:certificateId` | Publicly verify certificate validity | Public |
+
+---
+
+## 👨‍💻 Author
+
+- **Ayush** — Full Stack / Backend Engineer
+- LinkedIn: [Your LinkedIn Profile](https://linkedin.com/in/ayushsharma-dev)
+- GitHub: [@your-username](https://github.com/Sharma-ayush-20)
